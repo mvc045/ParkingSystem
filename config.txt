@@ -1,0 +1,21 @@
+# Настройки подключения
+
+serial_port=/dev/ttys322
+
+barrier_id=1
+
+# Время открытия шлагбаума (сек.)
+timeout_open_gate=5
+
+
+
+
+
+
+
+# brew install socat
+
+# Запускаем эмуляцию кабеля. Создает два порта: ./ttyMaster и ./ttySlave
+# -d -d печатает отладку, pty создает псевдо-терминалы, raw отключает эхо
+
+# socat -d -d pty,raw,echo=0 pty,raw,echo=0

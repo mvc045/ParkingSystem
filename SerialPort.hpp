@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <vector>
 
 // Драйвер для шлагбаума
 class SerialPort {
@@ -24,6 +25,8 @@ public:
     bool connect(const std::string& portName);
     void disconnect();
     bool sendData(const std::string& data);
+    bool sendBytes(const std::vector<uint8_t>& data);
+    int readBytes(std::vector<uint8_t>& buffer, int expectedLength, int timeout);
 };
 
 #endif /* SerialPort_hpp */

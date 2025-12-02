@@ -94,3 +94,69 @@ bool SerialPort::sendData(const string& data) {
     
     return true;
 }
+
+bool SerialPort::sendBytes(const vector<uint8_t>& data) {
+    if (!isConnect) {
+        return false;
+    }
+    // кол-во записаных байт
+    ssize_t bytesWritte = write(fileDescriptor, data.data(), data.size());
+    
+    // если записали не столько сколько хотели, ошибка
+    if (bytesWritte != (ssize_t)data.size()) {
+        cout << "Ошибка, записалось не столько байт сколько ожидалось";
+        return false;
+    }
+    
+    return true;
+}
+
+int SerialPort::readBytes(vector<uint8_t>& buffer, int expectedLength, int timeoutSec) {
+    if (!isConnect) {
+        return -1;
+    }
+    buffer.clear();
+    buffer.reserve(expectedLength);
+    
+    int totalBytesRead = 0;
+    
+    uint8_t tempBuffer[256];
+    
+    while (totalBytesRead < expectedLength) {
+        fd_set readfts;
+        FD_ZERO(&readfts);
+        FD_SET(fileDescriptor, &readfts);
+        
+        struct timeval timeout;
+        timeout.tv_sec = timeoutSec;
+        timeout.tv_usec = 0;
+        
+        // ждем пока придет ответ, или отваливаем по таймауту
+        int result = select(fileDescriptor + 1, &readfts, NULL, NULL, &timeout);
+        
+        if (result < 0) {
+            cout << "Ошибка в ACK\n";
+            return -1;
+        } else if (result == 0) {
+            cout << "Время ожидания вышло\n";
+            break;
+        }
+        
+        if (FD_ISSET(fileDescriptor, &readfts)) {
+            int bytesToRead = expectedLength - totalBytesRead;
+            if (bytesToRead > sizeof(tempBuffer)) bytesToRead = sizeof(tempBuffer);
+            
+            ssize_t n = read(fileDescriptor, tempBuffer, bytesToRead);
+            if (n > 0) {
+                buffer.insert(buffer.end(), tempBuffer, tempBuffer + n);
+                totalBytesRead += n;
+            } else {
+                break;
+            }
+        }
+        
+    }
+    
+    return totalBytesRead;
+    
+}

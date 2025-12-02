@@ -6,6 +6,8 @@
 //
 
 #include "SerialPort.hpp"
+#include "ModbusUtils.hpp"
+#include "ConfigLoader.hpp"
 #include <iostream>
 #include <unistd.h>
 
@@ -19,19 +21,48 @@ enum class GateCommand: char {
 class GateController {
 private:
     SerialPort port;
+    uint8_t deviceId; // ID шлагбаума
 public:
-    bool init(const string& devicePath) {
+    bool init(const string& devicePath, const uint8_t& id) {
+        deviceId = id;
         return port.connect(devicePath);
     }
     
     void openGate() {
-        cout << "[Controller] отправили команду на открытие\n";
-        string command(1, static_cast<char>(GateCommand::Open));
-        port.sendData(command);
+        cout << "[Controller] Отправили команду на открытие\n";
+        
+        ModbusFrame frame = { deviceId, 0x05, 0x0001, 0xFF00 };
+        auto rawData = frame.serialize();
+        
+        port.sendBytes(rawData);
+        cout << "Отправили пакет Modbus размером " << rawData.size() << " байт\n";
+        
+        // по стандарту modbus, устройство должно прислать ответ (ACK)
+        vector<uint8_t> response;
+        int bytesRead = port.readBytes(response, 8, 2); // Ждем 8 байт, 2 секунды
+        
+        // Проверяем что вернулось 8 байт
+        if (bytesRead != 8) {
+            cerr << "[Controller] Ошибка, с ответом от шлагбаума что то не так\n";
+            cerr << "[Controller] " << bytesRead << "\n";
+            return;
+        }
+        
+        // Проверяем СRС ответа, нужно что бы они совпадали
+        uint16_t receivedCRC = response[6] | (response[7] << 8);
+        vector<uint8_t> dataOnly(response.begin(), response.end() - 2);
+        uint16_t calcCRC = ModbusUtils::calculateCRC(dataOnly);
+        
+        if (receivedCRC == calcCRC) {
+            cout << "[Controller] CRC совпадают\n";
+            cout << "[Controller] Шлагбаум открыт\n";
+        } else {
+            cerr << "[Controller] CRC не совпали\n";
+        }
     }
     
     void closeGate() {
-        cout << "[Controller] отправили команду на закрытие\n";
+        cout << "[Controller] Отправили команду на закрытие\n";
         string command(1, static_cast<char>(GateCommand::Close));
         port.sendData(command);
     }
@@ -92,13 +123,14 @@ private:
     vector<ParkingSpot> spots;
     GateController gateController;
 public:
-    ParkingManager(int totalSpots, const string& portPath) {
+    ParkingManager(int totalSpots, const string& portPath, const int deviceId) {
         for (int i = 1; i <= totalSpots; i++) {
             spots.push_back(ParkingSpot(to_string(i)));
         }
         
-        if (!gateController.init(portPath)) {
-            cout << "Ошибка инициализации контроллера управления шлагбаумом";
+        if (!gateController.init(portPath, deviceId)) {
+            cerr << "Ошибка инициализации контроллера управления шлагбаумом.\n";
+            abort();
         }
     }
     
@@ -116,6 +148,13 @@ public:
             }
         }
         
+        ConfigLoader config;
+        if (!config.load("/Users/mvc/Documents/C++/SysCalls/Parking/config.txt")) {
+            cout << "Файл не найден\n";
+        }
+        
+        int sleepValue = config.getInt("timeout_open_gate");
+        
         // Ищем свободные места, если находим паркуемся
         for (ParkingSpot& spot: spots) {
             if (!spot.getIsOccupied()) {
@@ -123,7 +162,7 @@ public:
                 spot.park(&car);
                 // Открываем шлагбаум
                 gateController.openGate();
-                sleep(15);
+                sleep(sleepValue);
                 gateController.closeGate();
                 return;
             }
@@ -148,9 +187,17 @@ public:
 };
 
 int main(int argc, const char * argv[]) {
-    string portName = "/dev/ttys322";
+    // Загружаем конфиг
+    ConfigLoader config;
+    if (!config.load("/Users/mvc/Documents/C++/SysCalls/Parking/config.txt")) {
+        cout << "Файл не найден\n";
+    }
+    
+    int deviceId = config.getInt("barrier_id");
+    string portName = config.getString("serial_port");
+    
     // Парковка на 2 места
-    ParkingManager manager(2, portName);
+    ParkingManager manager(2, portName, deviceId);
     
     Car car1("A001AA", "Иванов", "+7 996 558 91 96");
     Car car2("A002AA", "Петров", "+7 996 558 91 95");
