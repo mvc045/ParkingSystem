@@ -37,24 +37,34 @@ public:
     }
 };
 
+enum class Command: uint8_t {
+    WRITE_SINGL_COIL = 0x05,
+    READ_COILS = 0x01
+};
+
+enum class Action: uint16_t {
+    OPEN = 0xFF00,
+    CLOSE = 0x0000
+};
+
 struct ModbusFrame {
     uint8_t address; // Адрес устройства
-    uint8_t commandCode; // Команда
+    Command commandCode; // Команда
     uint16_t registerAddr; // Куда пишем
-    uint16_t value; // Что пишем
+    Action value; // Что пишем
     
     vector<uint8_t> serialize() {
         vector<uint8_t> buffer;
         
         buffer.push_back(address);
-        buffer.push_back(commandCode);
+        buffer.push_back(static_cast<uint8_t>(commandCode));
         
         // Modbus Big-Endian (Старший байт первый)
         buffer.push_back((registerAddr >> 8) & 0xFF);
         buffer.push_back(registerAddr & 0xFF);
         
-        buffer.push_back((value >> 8) & 0xFF);
-        buffer.push_back(value & 0xFF);
+        buffer.push_back((static_cast<uint16_t>(value) >> 8) & 0xFF);
+        buffer.push_back(static_cast<uint16_t>(value) & 0xFF);
         
         // Считаем CRC
         uint16_t crc = ModbusUtils::calculateCRC(buffer);
