@@ -12,7 +12,7 @@
 #include "Database.hpp"
 #include <iostream>
 #include <unistd.h>
-
+#include "Middleware.hpp"
 
 // HTTP сервер
 #include "httplib.h"
@@ -26,6 +26,8 @@ using json = nlohmann::json;
 string pathConfig = "/Users/mvc/Documents/C++/SysCalls/Parking/config.txt";
 ConfigLoader config;
 
+// cmake -G Xcode -B build_xcode
+
 int main(int argc, const char * argv[]) {
     // Загружаем конфиг
     if (!config.load(pathConfig)) {
@@ -34,6 +36,7 @@ int main(int argc, const char * argv[]) {
     
     int deviceId = config.getInt("barrier_id");
     string portName = config.getString("serial_port");
+    string apiKey = config.getString("api_key");
     
     SerialPort port;
     
@@ -67,7 +70,7 @@ int main(int argc, const char * argv[]) {
         res.set_content(response.dump(), "application/json");
     });
     
-    svr.Post("/open", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/open", Middleware::withAuth(apiKey, [&](const httplib::Request& req, httplib::Response& res) {
         json response;
         
         try {
@@ -88,9 +91,9 @@ int main(int argc, const char * argv[]) {
             res.status = 500;
             res.set_content(response.dump(), "application/json");
         }
-    });
+    }));
     
-    svr.Post("/close", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/close", Middleware::withAuth(apiKey, [&](const httplib::Request& req, httplib::Response& res) {
         json response;
         
         try {
@@ -111,7 +114,7 @@ int main(int argc, const char * argv[]) {
             res.status = 500;
             res.set_content(response.dump(), "application/json");
         }
-    });
+    }));
     
     int portHTTP = config.getInt("port_http");
     

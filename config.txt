@@ -1,7 +1,7 @@
 # Настройки подключения
 
 # Контроллер (master)
-serial_port=/dev/ttys002
+serial_port=/dev/ttys003
 
 # ID нашего шлагбаума (slave ID)
 barrier_id=0
@@ -11,3 +11,5 @@ timeout_open_gate=5
 
 # Порт для HTTP сервера
 port_http=8081
+
+api_key=secret_password_123

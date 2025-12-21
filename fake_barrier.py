@@ -15,7 +15,7 @@ log.setLevel(logging.INFO)
  # Эмулятор шлагбаума через Modbus RTU
  # Нужные библиотеки: pip install pymodbus==3.6.1 pyserial
 
-serial_port = '/dev/ttys034'  # Укажите COM-порт
+serial_port = '/dev/ttys004'  # Укажите COM-порт
 
 class BarrierEmulator:
     def __init__(self, root, context):
