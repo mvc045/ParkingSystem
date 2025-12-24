@@ -14,7 +14,7 @@
 #include "SerialPort.hpp"
 #include "GateController.hpp"
 #include "RfidReader.hpp"
-#include "HTTPServer.hpp"
+#include "NetworkServer.hpp"
 
 using namespace std;
 
@@ -25,7 +25,7 @@ private:
     SerialPort gatePort;
     GateController controller;
     RfidReader rfidReader;
-    HTTPServer httpServer;
+    NetworkServer networkServer;
     
     void setup();
     void processRFIDCard(const string& cardCode);

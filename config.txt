@@ -1,10 +1,10 @@
 # Настройки подключения
 
 # Контроллер (master)
-serial_port=/dev/ttys025
+serial_port=/dev/ttys006
 
 # RFID считыватель
-rfid_port=/dev/ttys024
+rfid_port=/dev/ttys007
 
 # ID нашего шлагбаума (slave ID)
 barrier_id=0

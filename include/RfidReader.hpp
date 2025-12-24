@@ -54,6 +54,8 @@ public:
                 }
             }
         });
+        
+        worker.detach();
     }
     
     void stop() {

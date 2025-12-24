@@ -50,7 +50,7 @@ int main(int argc, const char * argv[]) {
     if (argc > 1) {
         portName = argv[1];
     } else {
-        portName = "/dev/ttys010";
+        portName = "/dev/ttys027";
 //        cout << "Введите порт в который будем писать: \n";
 //        cin >> portName;
     }

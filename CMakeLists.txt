@@ -1,10 +1,17 @@
-
 cmake_minimum_required(VERSION 3.10)
 
 project(Parking VERSION 1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# Подключаем uWebSockets
+add_definitions(-DLIBUS_NO_SSL)
+file(GLOB_RECURSE USOCKETS_SOURCES "libs/uSockets/src/*.c" "libs/uSockets/src/*.cpp")
+add_library(uSockets STATIC ${USOCKETS_SOURCES})
+target_include_directories(uSockets PUBLIC "libs/uSockets/src")
+
+include_directories(libs/uWebSockets/src)
 
 # Где искать заголовочные файлы (.hpp)
 include_directories(include)
@@ -29,11 +36,9 @@ source_group("Emulator Source" FILES ${RFID_TOOL_SOURCES})
 add_executable(RfidTool ${RFID_TOOL_SOURCES})
 
 find_package(Threads REQUIRED)
-target_link_libraries(Parking Threads::Threads)
+find_package(ZLIB REQUIRED)
 
-# Ищем пакет SQLite
-# find_package(SQLite3 REQUIRED)
-target_link_libraries(Parking Threads::Threads sqlite3)
+target_link_libraries(Parking Threads::Threads sqlite3 uSockets ZLIB::ZLIB)
 
 # ОТКЛЮЧИТЬ DTRACE
 set_target_properties(Parking PROPERTIES XCODE_ATTRIBUTE_ENABLE_DTRACE "NO")

@@ -10,7 +10,7 @@
 
 using namespace std;
 
-ParkingSystem::ParkingSystem(): db("parking_01.db"), controller(gatePort, 0), httpServer(controller, db, "secret_password_123") {
+ParkingSystem::ParkingSystem(): db("parking_01.db"), controller(gatePort, 0), networkServer(controller, db, "secret_password_123") {
 }
 
 bool ParkingSystem::init(const string& configPath) {
@@ -21,7 +21,7 @@ bool ParkingSystem::init(const string& configPath) {
     string gatePortName = config.getString("serial_port");
     string rfidPortName = config.getString("rfid_port");
     int barrierId = config.getInt("barrier_id");
-    string apiKet = config.getString("api_key");
+    string apiKey = config.getString("api_key");
     
     // 2. Оборудования
     
@@ -44,8 +44,18 @@ bool ParkingSystem::init(const string& configPath) {
 
 void ParkingSystem::setup() {
     controller.setLogger([this](string type, string msg) {
+        // Пишем в БД
         db.logEvent(type, msg, this->config.getInt("barrier_id"));
+        // в Терминал
         cout << "[" << type << "] " << msg << "\n";
+        // в WebSocket
+        
+        if (msg.find("открыт") != string::npos) {
+            this->networkServer.broadcastStatus("Open");
+        } else if (msg.find("закрыт") != string::npos) {
+            this->networkServer.broadcastStatus("Closed");
+        }
+        
     });
     
     rfidReader.setCallBack([this](string cardCode) {
@@ -67,7 +77,8 @@ void ParkingSystem::processRFIDCard(const string& cardCode) {
 
 void ParkingSystem::run() {
     rfidReader.start();
-    
     int httpPort = config.getInt("port_http");
-    httpServer.start(httpPort);
+    networkServer.start(httpPort);
+    
+    cin.get();
 }
