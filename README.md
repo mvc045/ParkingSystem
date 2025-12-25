@@ -1,3 +1,5 @@
+[ ![Static Badge](https://img.shields.io/badge/Swagger-OpenAPI-brightgreen)](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/mvc045/ParkingSystem/refs/heads/master/swagger.yaml)
+
 ## 📝 ToDo
 
 - [x] Настроить окружение (socat, виртуальные порты)
@@ -56,8 +58,3 @@ socat -d -d pty,raw,echo=0 pty,raw,echo=0&
 *   **Шлагбаум (Slave):** Слушает линию, выполняет команды контроллера и возвращает текущий статус.
 
 Обмен пакетами происходит через созданные ранее виртуальные COM-порты.
-
-```bash
-curl -X POST http://localhost:8081/close
-```
-
